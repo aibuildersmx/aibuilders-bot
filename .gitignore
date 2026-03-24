@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+/data/
+baileys-auth/
+sessions/
+agent/auth.json
