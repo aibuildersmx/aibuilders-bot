@@ -23,6 +23,7 @@ import sharp from "sharp";
 import Anthropic from "@anthropic-ai/sdk";
 import { isAllowed, isAdmin, isOpenGroup, isGroupAllowed, trackMessage, checkGroupCooldown } from "./guards.js";
 import { getOrCreateSession, promptStreaming, resetGroupSession, sharedAuthStorage } from "./agent.js";
+import { upsertContact, getContactLabel } from "./contacts.js";
 
 const logger = pino({ level: "silent" }); // Baileys is VERY noisy
 
@@ -260,8 +261,7 @@ function getRecentMessages(jid: string): string {
 
     return recent.map(m => {
       const time = new Date(m.ts).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-      const sender = m.sender.split("@")[0].slice(-6); // Last 6 chars as anonymous ID
-      return `[${time}] ${sender}: ${m.text}`;
+      return `[${time}] ${getContactLabel(m.sender)}: ${m.text}`;
     }).join("\n");
   } catch (err) {
     console.error("[context] Failed to read recent messages:", err);
@@ -298,8 +298,7 @@ function getAllTodayMessages(jid: string): string {
 
     return allMessages.map(m => {
       const time = new Date(m.ts).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-      const sender = m.sender.split("@")[0].slice(-6);
-      return `[${time}] ${sender}: ${m.text}`;
+      return `[${time}] ${getContactLabel(m.sender)}: ${m.text}`;
     }).join("\n");
   } catch (err) {
     console.error("[context] Failed to read today's messages:", err);
@@ -448,7 +447,8 @@ async function handleGroupMessage(jid: string, senderId: string, text: string, r
   const contextPrefix = recentChat
     ? `[CONTEXTO DEL GRUPO — ${contextLabel}, NO los menciones explícitamente, solo úsalos para entender de qué se habla]\n${recentChat}\n\n[PREGUNTA DEL USUARIO]\n`
     : "";
-  const fullQuery = contextPrefix + query;
+  const senderLabel = getContactLabel(senderId);
+  const fullQuery = `[REMITENTE: ${senderLabel}]\n${contextPrefix}${query}`;
 
   try {
     const session = await getOrCreateSession(jid);
@@ -570,6 +570,10 @@ export async function connectWhatsApp(): Promise<WASocket> {
       // Skip messages with no text and no image
       if (!text && !hasImage) continue;
 
+      // Track contact identity from WhatsApp pushName
+      const contactSender = isJidGroup(jid) ? (msg.key.participant ?? "") : jid;
+      if (contactSender) upsertContact(contactSender, msg.pushName, isJidGroup(jid) ? jid : undefined);
+
       // Log all group messages for analysis
       if (isJidGroup(jid)) {
         const sender = msg.key.participant ?? "";
@@ -614,7 +618,8 @@ export async function connectWhatsApp(): Promise<WASocket> {
         try {
           const session = await getOrCreateSession(jid);
           let fullResponse = "";
-          await promptStreaming(session, text, {
+          const dmQuery = `[REMITENTE: ${getContactLabel(jid)}]\n${text}`;
+          await promptStreaming(session, dmQuery, {
             onDelta(chunk) { fullResponse += chunk; },
           });
           await sendReply(jid, fullResponse.trim() || "👁️ (sin respuesta)", msg);
