@@ -218,7 +218,7 @@ export async function prompt(
       ],
       tools: tools.length ? tools : undefined,
       messages: messagesForSend,
-    } as Anthropic.MessageCreateParamsNonStreaming);
+    });
 
     totalIn +=
       (response.usage.input_tokens ?? 0) +
