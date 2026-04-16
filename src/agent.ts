@@ -17,10 +17,10 @@ export const MODELS = {
 
 export type ModelKey = keyof typeof MODELS;
 
-export const MODEL: string = MODELS.sonnet;
+export const MODEL: string = MODELS.opus;
 
 const CONTEXT_TOKEN_CAP = 150_000;
-const MAX_OUTPUT_TOKENS = 4096;
+const MAX_OUTPUT_TOKENS = 16_000; // Opus 4.7 adaptive thinking shares this budget with the response
 const MAX_TOOL_ITERATIONS = 6;
 
 const SESSIONS_DIR =
@@ -206,15 +206,19 @@ export async function prompt(
       return m;
     });
 
+    // Opus 4.7 requires adaptive thinking (manual budget_tokens is rejected).
+    // Interleaved thinking between tool calls is enabled automatically in this
+    // mode; we already pass assistant blocks back unchanged across iterations.
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
+      thinking: { type: "adaptive" },
       system: [
         { type: "text", text: system, cache_control: { type: "ephemeral" } },
       ],
       tools: tools.length ? tools : undefined,
       messages: messagesForSend,
-    });
+    } as Anthropic.MessageCreateParamsNonStreaming);
 
     totalIn +=
       (response.usage.input_tokens ?? 0) +
