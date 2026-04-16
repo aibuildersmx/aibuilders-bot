@@ -116,6 +116,58 @@ async function processImage(msg: any): Promise<{ filename: string; description: 
   }
 }
 
+const PDF_MAX_BYTES = 10 * 1024 * 1024; // 10MB
+
+/**
+ * Download a PDF and summarize it with Haiku using a native document block.
+ * Returns { filename, summary } or null if the document can't be processed.
+ */
+async function processPdf(msg: any): Promise<{ filename: string; summary: string } | null> {
+  try {
+    const doc =
+      msg.message?.documentMessage ??
+      msg.message?.documentWithCaptionMessage?.message?.documentMessage;
+    if (!doc) return null;
+    const filename = doc.fileName ?? "document.pdf";
+
+    const buffer = await downloadMediaMessage(msg, "buffer", {});
+    if (!buffer || (buffer as Buffer).length === 0) return null;
+    const size = (buffer as Buffer).length;
+    console.log(`[pdf] Downloaded ${filename} (${Math.round(size / 1024)}KB)`);
+
+    if (size > PDF_MAX_BYTES) {
+      return { filename, summary: `(PDF demasiado grande: ${Math.round(size / 1024 / 1024)}MB, no se resumió)` };
+    }
+
+    const b64 = (buffer as Buffer).toString("base64");
+    let summary = "(PDF)";
+    try {
+      const client = getAnthropic();
+      const response = await client.messages.create({
+        model: "claude-haiku-4-5",
+        max_tokens: 300,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } },
+            { type: "text", text: "Resume este PDF en 2-3 oraciones cortas en español. Enfócate en: qué es, de qué trata y un dato clave o conclusión. Solo el resumen, nada más." },
+          ],
+        }],
+      });
+      const textBlock = response.content.find((b) => b.type === "text");
+      if (textBlock && textBlock.type === "text") summary = textBlock.text.trim();
+      console.log(`[pdf] Summarized ${filename}: ${summary.slice(0, 80)}`);
+    } catch (err) {
+      console.error("[pdf] Haiku summarization failed:", err);
+    }
+
+    return { filename, summary };
+  } catch (err) {
+    console.error("[pdf] Failed to process PDF:", err);
+    return null;
+  }
+}
+
 /**
  * Clean up images older than 24 hours.
  */
@@ -344,6 +396,8 @@ function extractText(message: any): string | null {
     message?.extendedTextMessage?.text ??
     message?.imageMessage?.caption ??
     message?.videoMessage?.caption ??
+    message?.documentMessage?.caption ??
+    message?.documentWithCaptionMessage?.message?.documentMessage?.caption ??
     null
   );
 }
@@ -566,9 +620,13 @@ export async function connectWhatsApp(): Promise<WASocket> {
 
       const text = extractText(msg.message);
       const hasImage = !!msg.message?.imageMessage;
+      const docMessage =
+        msg.message?.documentMessage ??
+        msg.message?.documentWithCaptionMessage?.message?.documentMessage;
+      const hasPdf = !!docMessage && (docMessage.mimetype ?? "").includes("pdf");
 
-      // Skip messages with no text and no image
-      if (!text && !hasImage) continue;
+      // Skip messages with no text, no image, and no PDF
+      if (!text && !hasImage && !hasPdf) continue;
 
       // Track contact identity from WhatsApp pushName
       const contactSender = isJidGroup(jid) ? (msg.key.participant ?? "") : jid;
@@ -590,6 +648,17 @@ export async function connectWhatsApp(): Promise<WASocket> {
             logMessage(jid, msgId, sender, imgText, ts);
           }).catch(() => {
             logMessage(jid, msgId, sender, `[📷 imagen]${text ? " " + text : ""}`, ts);
+          });
+        } else if (hasPdf) {
+          // Process PDF in background — summarize with Haiku via native document block
+          processPdf(msg).then((result) => {
+            const caption = text ?? "";
+            const pdfText = result
+              ? `[📄 ${result.filename} — ${result.summary}]${caption ? " " + caption : ""}`
+              : `[📄 PDF]${caption ? " " + caption : ""}`;
+            logMessage(jid, msgId, sender, pdfText, ts);
+          }).catch(() => {
+            logMessage(jid, msgId, sender, `[📄 PDF]${text ? " " + text : ""}`, ts);
           });
         } else if (text) {
           // Enrich links in background

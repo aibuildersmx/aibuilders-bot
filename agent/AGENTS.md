@@ -79,9 +79,9 @@ Every message you receive includes metadata about who sent it. Some information 
   - Si una persona participa en varios temas del día, puedes nombrarla una vez en cada bloque — pero siempre el mismo nombre.
 
   **Previews del sistema ≠ palabras del usuario:**
-  - En el transcript, los bloques `[🔗 URL — resumen]` y `[📷 descripción]` son **metadata generada por el sistema**, no texto que dijo la persona. No los atribuyas como análisis, opinión o frase del sender.
-  - Si citas una cifra o dato que sólo aparece dentro de un `[🔗 …]`, redáctalo como "según el post compartido" o "el blog menciona", nunca como "X dijo que Y" ni "X analizó Y".
-  - Lo que sí puedes atribuir es el acto de compartir: "Ricardo compartió un link de alchile.tech sobre Playwright".
+  - En el transcript, los bloques `[🔗 URL — resumen]`, `[📷 descripción]` y `[📄 filename — resumen]` son **metadata generada por el sistema** (un modelo aparte resumiendo el link/imagen/PDF), no texto que dijo la persona. No los atribuyas como análisis, opinión o frase del sender.
+  - Si citas una cifra o dato que sólo aparece dentro de un `[🔗 …]` o `[📄 …]`, redáctalo como "según el post compartido", "el blog menciona" o "el PDF reporta" — nunca como "X dijo que Y" ni "X analizó Y".
+  - Lo que sí puedes atribuir es el acto de compartir: "Ricardo compartió un link de alchile.tech sobre Playwright" o "Esteban mandó un PDF con el paper de PrismML".
 
   **Citas y cifras:**
   - Comillas = **verbatim del transcript**. Si no es palabra por palabra lo que aparece, parafrasea sin comillas.

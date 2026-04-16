@@ -115,7 +115,7 @@ function formatMessages(
 export const GROUP_MESSAGES_TOOL: Anthropic.Tool = {
   name: "get_group_messages",
   description:
-    "Reads logged messages from a WhatsApp group the bot is in. Use this when the user asks for a summary, report, or analysis of what happened in a specific group. Returns messages in chronological order with `[HH:MM] sender: text` format. Senders are rendered as 'Name (…1234)' when their WhatsApp pushName is known, falling back to '…1234' (last 4 digits of their phone). Same '…1234' suffix means SAME person — do not split into multiple actors. Messages that received reactions get a trailing `  [emoji×N emoji×N]` block where N is the count (omitted when N=1). Reactions are community attention signal, not truth signal. Inline `[🔗 URL — summary]` and `[📷 description]` blocks are system-generated metadata, not words the sender said.",
+    "Reads logged messages from a WhatsApp group the bot is in. Use this when the user asks for a summary, report, or analysis of what happened in a specific group. Returns messages in chronological order with `[HH:MM] sender: text` format. Senders are rendered as 'Name (…1234)' when their WhatsApp pushName is known, falling back to '…1234' (last 4 digits of their phone). Same '…1234' suffix means SAME person — do not split into multiple actors. Messages that received reactions get a trailing `  [emoji×N emoji×N]` block where N is the count (omitted when N=1). Reactions are community attention signal, not truth signal. Inline `[🔗 URL — summary]`, `[📷 description]`, and `[📄 filename — summary]` blocks are system-generated metadata, not words the sender said.",
   input_schema: {
     type: "object",
     properties: {
