@@ -9,6 +9,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { existsSync, readFileSync, readdirSync } from "fs";
 import { join } from "path";
 import { cdmxDateString, cdmxDateStringOffset } from "../time.js";
+import { getContactLabel } from "../contacts.js";
 
 const MESSAGES_DIR = process.env.MESSAGES_DIR ?? "/data/messages";
 
@@ -61,7 +62,7 @@ function formatMessages(msgs: LoggedMessage[]): string {
         minute: "2-digit",
         timeZone: "America/Mexico_City",
       });
-      const sender = m.sender.split("@")[0].slice(-6);
+      const sender = getContactLabel(m.sender);
       return `[${time}] ${sender}: ${m.text}`;
     })
     .join("\n");
@@ -70,7 +71,7 @@ function formatMessages(msgs: LoggedMessage[]): string {
 export const GROUP_MESSAGES_TOOL: Anthropic.Tool = {
   name: "get_group_messages",
   description:
-    "Reads logged messages from a WhatsApp group the bot is in. Use this when the user asks for a summary, report, or analysis of what happened in a specific group. Returns messages in chronological order with [HH:MM] sender: text format. Senders are anonymized to the last 6 chars of their phone.",
+    "Reads logged messages from a WhatsApp group the bot is in. Use this when the user asks for a summary, report, or analysis of what happened in a specific group. Returns messages in chronological order with [HH:MM] sender: text format. Senders are rendered as 'Name (…1234)' when their WhatsApp pushName is known, falling back to the last 4 digits of their phone. Quote these names directly when attributing ideas, questions, or links in the recap.",
   input_schema: {
     type: "object",
     properties: {

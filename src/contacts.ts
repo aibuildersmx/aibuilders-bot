@@ -92,5 +92,6 @@ export function getContactLabel(senderId: string): string {
   const phone = senderId.split("@")[0];
   const tail = phone.slice(-4);
   const name = load()[phone]?.name;
-  return name ? `${name} (…${tail})` : `…${tail}`;
+  const firstName = name?.split(/\s+/)[0];
+  return firstName ? `${firstName} (…${tail})` : `…${tail}`;
 }
