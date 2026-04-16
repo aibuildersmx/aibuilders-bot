@@ -29,12 +29,7 @@ import { cdmxDateString, cdmxDateStringOffset } from "./time.js";
 const logger = pino({ level: "silent" }); // Baileys is VERY noisy
 
 const AUTH_DIR = process.env.BAILEYS_AUTH_DIR ?? "/data/baileys-auth";
-const BOT_NAME = process.env.BOT_NAME ?? "aiby";
-const BOT_PREFIX = process.env.BOT_PREFIX ?? "!aiby";
-const BOT_ALIASES = (process.env.BOT_ALIASES ?? "bot,aibot")
-  .split(",")
-  .map((a) => a.trim().toLowerCase())
-  .filter(Boolean);
+const BOT_PREFIX = process.env.BOT_PREFIX ?? "aiby";
 
 // WhatsApp message length limit
 const MAX_WA_MESSAGE = 4096;

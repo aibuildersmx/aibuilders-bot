@@ -40,7 +40,6 @@ WhatsApp ← Baileys → Message Handler → Anthropic Messages API → Response
 |----------|-------------|
 | `ANTHROPIC_API_KEY` | **Required.** Anthropic API key (billed to your API account) |
 | `BOT_PREFIX` | Trigger word (default: `aiby`) |
-| `BOT_ALIASES` | Comma-separated aliases |
 | `ALLOWED_GROUPS` | Comma-separated group JIDs |
 | `ALLOWED_USERS` | Comma-separated user IDs (empty = all) |
 | `ADMIN_USERS` | Comma-separated admin IDs (for summaries) |
