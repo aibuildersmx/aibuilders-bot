@@ -22,7 +22,7 @@ import { downloadMediaMessage } from "@whiskeysockets/baileys";
 import sharp from "sharp";
 import Anthropic from "@anthropic-ai/sdk";
 import { isAllowed, isAdmin, isOpenGroup, isGroupAllowed, trackMessage, checkGroupCooldown } from "./guards.js";
-import { prompt as agentPrompt } from "./agent.js";
+import { prompt as agentPrompt, resetSession } from "./agent.js";
 import { upsertContact, getContactLabel } from "./contacts.js";
 import { cdmxDateString, cdmxDateStringOffset } from "./time.js";
 
@@ -435,6 +435,14 @@ async function handleGroupMessage(jid: string, senderId: string, text: string, r
   const isSlashCommand = query.startsWith("/");
   if (isSlashCommand && !isAdmin(userId)) return;
 
+  // /reset — archive the session so the next turn starts with empty history.
+  const resetCommands = ["/reset", "/limpiar", "/olvida", "/clear"];
+  if (resetCommands.some((cmd) => query.toLowerCase().startsWith(cmd))) {
+    await resetSession(jid);
+    await sendReply(jid, "👁️ Sesión limpia.", rawMsg);
+    return;
+  }
+
   // Detect admin summary/analysis commands
   const adminCommands = ["/resumen", "/summary", "/stats", "/reporte", "/report", "/análisis", "/analisis"];
   const isAdminQuery = adminCommands.some(cmd => query.toLowerCase().startsWith(cmd));
@@ -607,6 +615,14 @@ export async function connectWhatsApp(): Promise<WASocket> {
       } else if (testDmJids.includes(jid)) {
         // DM test mode — skip guards, respond directly
         console.log(`[wa] DM from ${jid}`);
+
+        const dmResetCmds = ["/reset", "/limpiar", "/olvida", "/clear"];
+        if (dmResetCmds.some((cmd) => text.toLowerCase().trim().startsWith(cmd))) {
+          await resetSession(jid);
+          await sendReply(jid, "👁️ Sesión limpia.", msg);
+          continue;
+        }
+
         await sock?.sendPresenceUpdate("composing", jid);
         try {
           const dmQuery = `[REMITENTE: ${getContactLabel(jid)}]\n${text}`;
