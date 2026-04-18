@@ -17,11 +17,11 @@ export const MODELS = {
 
 export type ModelKey = keyof typeof MODELS;
 
-export const MODEL: string = MODELS.opus;
+export const MODEL: string = MODELS.sonnet;
 
 const CONTEXT_TOKEN_CAP = 150_000;
-const MAX_OUTPUT_TOKENS = 16_000; // Opus 4.7 adaptive thinking shares this budget with the response
-const MAX_TOOL_ITERATIONS = 6;
+const MAX_OUTPUT_TOKENS = 16_000; // Sonnet 4.6 adaptive thinking shares this budget with the response
+const MAX_TOOL_ITERATIONS = 25;
 
 const SESSIONS_DIR =
   process.env.SESSIONS_DIR ??
@@ -206,7 +206,7 @@ export async function prompt(
       return m;
     });
 
-    // Opus 4.7 requires adaptive thinking (manual budget_tokens is rejected).
+    // Sonnet 4.6 supports adaptive thinking (budget_tokens is deprecated).
     // Interleaved thinking between tool calls is enabled automatically in this
     // mode; we already pass assistant blocks back unchanged across iterations.
     const response = await client.messages.create({
